@@ -1,0 +1,14 @@
+# compiled/cached files
+*__pycache__
+
+# datasets, dowload at https://s3-us-west-2.amazonaws.com/static.pyimagesearch.com/dl4cv/book/tiny-imagenet-200.zip
+datasets
+
+# mas_lib, get code at https://github.com/Softdude47/mas_lib
+mas_lib
+
+# outputs
+*.json
+*.png
+*.hdf5
+*.h5
