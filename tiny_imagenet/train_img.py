@@ -76,7 +76,7 @@ if args["model"] is None:
     opt = SGD(config.LEARNING_RATE, momentum=0.9)
 
     # build and compile model
-    model = ResNet.build(config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3, config.NUM_CLASSES, 0.0002)
+    model = ResNet.build(config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3, config.NUM_CLASSES, (9, 9, 9, 2), (64, 128, 256, 512), reg=5e-4)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
 
 # loads previously saved model(if any)

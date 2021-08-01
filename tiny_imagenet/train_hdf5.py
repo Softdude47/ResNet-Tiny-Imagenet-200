@@ -2,18 +2,21 @@ import sys
 import json
 import argparse
 from tensorflow.keras import backend as K
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.models import load_model
 # from tensorflow.keras.callbacks import LearningRateScheduler
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 sys.path.append("../")
-from mas_lib.nn.conv.deepergooglenet import DeeperGoogLeNet
+from mas_lib.nn.conv.resnet import ResNet
 from mas_lib.callbacks.epochcheckpoint import EpochCheckpoint
 from mas_lib.callbacks.trainingmonitor import TrainingMonitor
 from mas_lib.io.hdf5datasetgenerator import HDF5DatasetGenerator
 from tiny_imagenet.configs import tiny_imagenet_config as config
 from mas_lib.preprocessing.meanpreprocessor import MeanPreprocessor
+from mas_lib.preprocessing.patchpreprocessor import PatchPreprocessor
+from mas_lib.preprocessing.simplepreprocessor import SimplePreprocessor
+from mas_lib.preprocessing.imagetoarraypreprocessor import ImageToArrayPreprocessor
 
 # command line argument
 ap = argparse.ArgumentParser()
@@ -31,7 +34,11 @@ args = vars(ap.parse_args())
 mean = json.loads(open(config.DATASET_MEAN).read())
 
 # initialize dataset preprocessor
+iap = ImageToArrayPreprocessor()
+pp = PatchPreprocessor(config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
 mp = MeanPreprocessor(rMean=mean["R"], gMean=mean["G"], bMean=mean["B"])
+sp = SimplePreprocessor(config.IMAGE_WIDTH, config.IMAGE_HEIGHT)
+
 aug = ImageDataGenerator(
     width_shift_range=0.1,
     height_shift_range=0.1,
@@ -42,8 +49,8 @@ aug = ImageDataGenerator(
 )
 
 # initialize dataset generators
-train_gen = HDF5DatasetGenerator(config.TRAIN_HDF5, "images", config.BATCH_SIZE, [mp,], aug, classes=config.NUM_CLASSES)
-test_gen = HDF5DatasetGenerator(config.TEST_HDF5, "images", config.BATCH_SIZE, [mp,], classes=config.NUM_CLASSES)
+train_gen = HDF5DatasetGenerator(config.TRAIN_HDF5, "images", config.BATCH_SIZE, [pp, mp, iap], aug, classes=config.NUM_CLASSES)
+test_gen = HDF5DatasetGenerator(config.TEST_HDF5, "images", config.BATCH_SIZE, [sp, mp, iap], classes=config.NUM_CLASSES)
 
 # create model callbacks
 callbacks=[
@@ -55,10 +62,10 @@ callbacks=[
 # creates new model if there wasn't a pevious one
 if args["model"] is None:
     # initialize and tune model optimizer
-    opt = Adam(config.LEARNING_RATE)
+    opt = SGD(config.LEARNING_RATE, momentum=0.9)
 
     # build and compile model
-    model = DeeperGoogLeNet.build(config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3, config.NUM_CLASSES, 0.000503)
+    model = ResNet.build(config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3, config.NUM_CLASSES, (9, 9, 9, 2), (64, 128, 256, 512), reg=5e-4)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
 
 # loads previously saved model(if any)

@@ -50,13 +50,14 @@ for (dataset, paths, labels, hdf5_path) in datasets:
     pbar = progressbar.ProgressBar(max_value=len(paths), widgets=widgets).start()
     
     # initialize database
-    writer = HDF5DatasetWriter(hdf5_path, "images", 1000, (len(paths), config.IMAGE_WIDTH, config.IMAGE_HEIGHT, 3))
+    writer = HDF5DatasetWriter(hdf5_path, "images", 1000, (len(paths), 70, 70, 3))
     writer.store_class_label(le.classes_)
     
     # loop over dataset split's image path and corresponding label
     for (path, label) in zip(paths, labels):
         # load image from path
         image = cv2.imread(path)
+        image = cv2.resize(70, 70)
         image = cv2.cvtColor(image.astype("float"), cv2.COLOR_BGR2RGB)
         
         # calculate mean of train split image channels
