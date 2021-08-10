@@ -9,6 +9,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 sys.path.append("../")
 from mas_lib.nn.conv.resnet import ResNet
 from mas_lib.callbacks.epochcheckpoint import EpochCheckpoint
+from mas_lib.callbacks.polynomialdecay import PolynomialDecay
 from mas_lib.callbacks.trainingmonitor import TrainingMonitor
 from mas_lib.io.imagedatasetgenerator import ImageDatasetGenerator
 from mas_lib.preprocessing.meanpreprocessor import MeanPreprocessor
@@ -67,6 +68,7 @@ gen = ImageDatasetGenerator(
 # create model callbacks
 callbacks=[
     TrainingMonitor(config.FIG_PATH, config.JSON_PATH, args["start_at"]),
+    PolynomialDecay(init_lr=config.LEARNING_RATE, power=1),
     EpochCheckpoint(path=args["checkpoint"], interval=5)
 ]
 
@@ -76,7 +78,7 @@ if args["model"] is None:
     opt = SGD(config.LEARNING_RATE, momentum=0.9)
 
     # build and compile model
-    model = ResNet.build(config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3, config.NUM_CLASSES, (9, 9, 9, 2), (64, 128, 256, 512), reg=5e-4)
+    model = ResNet.build(config.IMAGE_HEIGHT, config.IMAGE_WIDTH, 3, config.NUM_CLASSES, (2, 4, 6), (64, 64, 128, 256), reg=5e-4)
     model.compile(optimizer=opt, loss="categorical_crossentropy", metrics=["accuracy"])
 
 # loads previously saved model(if any)
